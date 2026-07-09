@@ -1,5 +1,5 @@
-import { VoiceAssistant } from '@/components/VoiceAssistant'
+import { Console } from '@/components/Console'
 
 export default function Home() {
-  return <VoiceAssistant />
+  return <Console />
 }

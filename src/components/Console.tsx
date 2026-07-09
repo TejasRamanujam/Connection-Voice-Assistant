@@ -1,13 +1,12 @@
 'use client'
 
-// -- NEXTAUTH (re-enable by uncommenting) --
-// import { signIn, signOut, useSession } from 'next-auth/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Header } from './Header'
-import { ChatSurface } from './ChatSurface'
-import { InputDock } from './InputDock'
-import { VoiceOverlay } from './VoiceOverlay'
-import { Settings } from './Settings'
+import { Masthead } from './Masthead'
+import { StripChart } from './StripChart'
+import { TransmissionLog } from './TransmissionLog'
+import { TransmitBar } from './TransmitBar'
+import { VoiceDeck } from './VoiceDeck'
+import { SettingsSheet } from './SettingsSheet'
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition'
 import { useSpeechSynthesis } from '@/hooks/useSpeechSynthesis'
 import { useWakeWord } from '@/hooks/useWakeWord'
@@ -22,10 +21,14 @@ const DEFAULT_PREFS: UserPreferences = {
   ttsProvider: 'browser',
 }
 
-export function VoiceAssistant() {
-  // -- NEXTAUTH (re-enable) --
-  // const { data: session } = useSession()
+const STATE_LABEL: Record<AssistantState, string> = {
+  idle: 'standby',
+  listening: 'listening',
+  processing: 'routing',
+  speaking: 'speaking',
+}
 
+export function Console() {
   const [messages, setMessages] = useState<Message[]>([])
   const [state, setState] = useState<AssistantState>('idle')
   const [error, setError] = useState<string>('')
@@ -38,7 +41,9 @@ export function VoiceAssistant() {
   useEffect(() => {
     const saved = localStorage.getItem('voice-assistant-prefs')
     if (saved) {
-      try { setPreferences({ ...DEFAULT_PREFS, ...JSON.parse(saved) }) } catch {}
+      try {
+        setPreferences({ ...DEFAULT_PREFS, ...JSON.parse(saved) })
+      } catch {}
     }
   }, [])
 
@@ -52,47 +57,50 @@ export function VoiceAssistant() {
 
   const { speak, stop: stopSpeaking, isSpeaking, voices } = useSpeechSynthesis(preferences)
 
-  const handleTranscript = useCallback(async (text: string) => {
-    if (!text.trim() || state === 'processing') return
-    setError('')
-    setState('processing')
+  const handleTranscript = useCallback(
+    async (text: string) => {
+      if (!text.trim() || state === 'processing') return
+      setError('')
+      setState('processing')
 
-    const userMsg: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: text,
-      createdAt: new Date(),
-    }
-    setMessages(prev => [...prev, userMsg])
-
-    try {
-      abortRef.current = new AbortController()
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, conversationId }),
-        signal: abortRef.current.signal,
-      })
-
-      if (!res.ok) throw new Error('Failed to get response')
-      const data = await res.json()
-      if (data.conversationId) setConversationId(data.conversationId)
-
-      const assistantMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: data.response,
+      const userMsg: Message = {
+        id: Date.now().toString(),
+        role: 'user',
+        content: text,
         createdAt: new Date(),
       }
-      setMessages(prev => [...prev, assistantMsg])
-      setState('speaking')
-      speak(data.response)
-    } catch (err) {
-      if (err instanceof Error && err.name === 'AbortError') return
-      setError('Failed to get response. Check your API key.')
-      setState('idle')
-    }
-  }, [state, conversationId, speak])
+      setMessages(prev => [...prev, userMsg])
+
+      try {
+        abortRef.current = new AbortController()
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text, conversationId }),
+          signal: abortRef.current.signal,
+        })
+
+        if (!res.ok) throw new Error('Failed to get response')
+        const data = await res.json()
+        if (data.conversationId) setConversationId(data.conversationId)
+
+        const assistantMsg: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: data.response,
+          createdAt: new Date(),
+        }
+        setMessages(prev => [...prev, assistantMsg])
+        setState('speaking')
+        speak(data.response)
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') return
+        setError('The relay did not answer. Check the API key and try again.')
+        setState('idle')
+      }
+    },
+    [state, conversationId, speak]
+  )
 
   useEffect(() => {
     if (state === 'speaking' && !isSpeaking) setState('idle')
@@ -100,7 +108,10 @@ export function VoiceAssistant() {
 
   const { isListening, isSupported, start, stop, interimTranscript } = useSpeechRecognition({
     onTranscript: handleTranscript,
-    onError: (err) => { setError(err); setState('idle') },
+    onError: err => {
+      setError(err)
+      setState('idle')
+    },
   })
 
   useEffect(() => {
@@ -108,7 +119,7 @@ export function VoiceAssistant() {
     else if (state === 'listening') setState('idle')
   }, [isListening]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Wake word opens voice mode hands-free
+  // Wake word opens the live channel hands-free
   useWakeWord({
     wakeWord: preferences.wakeWord,
     enabled: preferences.wakeWordEnabled && state === 'idle' && !voiceMode,
@@ -120,21 +131,32 @@ export function VoiceAssistant() {
     }, [state, start]),
   })
 
-  // Orb tap inside voice mode: cycles the interaction state machine
-  const handleOrbClick = useCallback(() => {
-    if (state === 'speaking') { stopSpeaking(); setState('idle'); return }
-    if (state === 'listening') { stop(); return }
-    if (state === 'processing') { abortRef.current?.abort(); setState('idle'); return }
+  // Telegraph key inside the deck: cycles the interaction state machine
+  const handleKeyClick = useCallback(() => {
+    if (state === 'speaking') {
+      stopSpeaking()
+      setState('idle')
+      return
+    }
+    if (state === 'listening') {
+      stop()
+      return
+    }
+    if (state === 'processing') {
+      abortRef.current?.abort()
+      setState('idle')
+      return
+    }
     start()
   }, [state, stopSpeaking, stop, start])
 
-  // Mic button in the dock: enter voice mode and start listening
+  // Mic button in the transmit bar: open the deck and start listening
   const handleEnterVoiceMode = useCallback(() => {
     setVoiceMode(true)
     if (state === 'idle' && isSupported) start()
   }, [state, isSupported, start])
 
-  // Exit voice mode: quiesce everything
+  // Leaving the deck: quiesce everything
   const handleExitVoiceMode = useCallback(() => {
     setVoiceMode(false)
     stopSpeaking()
@@ -146,54 +168,57 @@ export function VoiceAssistant() {
   const lastReply = [...messages].reverse().find(m => m.role === 'assistant')?.content ?? ''
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden flex flex-col bg-void">
-      {/* Ambient aurora backdrop */}
-      <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="aurora-blob aurora-1" />
-        <div className="aurora-blob aurora-2" />
-        <div className="aurora-blob aurora-3" />
-      </div>
-
-      <Header
+    <div className="grain relative w-full h-full overflow-hidden flex flex-col bg-paper text-ink">
+      <Masthead
         state={state}
         wakeWordEnabled={preferences.wakeWordEnabled}
         wakeWord={preferences.wakeWord}
         onSettingsClick={() => setShowSettings(true)}
       />
 
-      <div className="relative z-10 flex-1 flex flex-col overflow-hidden min-h-0">
-        <ChatSurface
+      {/* the chart recorder — always running, always honest */}
+      <div className="relative z-10 shrink-0 mx-4 sm:mx-8 mt-2 h-16 sm:h-24 border border-paper-line bg-paper-deep/40">
+        <StripChart state={state} kick={interimTranscript.length} paused={voiceMode} />
+        <span className="absolute left-2 top-1.5 text-[9px] sm:text-[10px] tracking-wide2 uppercase text-ink-dim">
+          CH&#8211;01 &middot; voice trace
+        </span>
+        <span className="absolute right-2 top-1.5 text-[9px] sm:text-[10px] tracking-wide2 uppercase text-signal font-semibold">
+          {STATE_LABEL[state]}
+        </span>
+      </div>
+
+      <main className="relative z-10 flex-1 flex flex-col overflow-hidden min-h-0">
+        <TransmissionLog
           messages={messages}
           state={state}
           error={error}
           interimTranscript={voiceMode ? '' : interimTranscript}
           onPrompt={handleTranscript}
         />
-
-        <InputDock
+        <TransmitBar
           state={state}
           isSupported={isSupported}
           onSubmitText={handleTranscript}
           onVoiceMode={handleEnterVoiceMode}
         />
-      </div>
+      </main>
 
       {voiceMode && (
-        <VoiceOverlay
+        <VoiceDeck
           state={state}
           interimTranscript={interimTranscript}
           lastReply={lastReply}
           error={error}
-          onOrbClick={handleOrbClick}
+          onKeyClick={handleKeyClick}
           onClose={handleExitVoiceMode}
         />
       )}
 
       {showSettings && (
-        <Settings
+        <SettingsSheet
           preferences={preferences}
-          onChange={savePreferences}
           voices={voices}
+          onChange={savePreferences}
           onClose={() => setShowSettings(false)}
         />
       )}
