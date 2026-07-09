@@ -2,191 +2,152 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   SIGNAL ON PAPER — field-station chart-recorder interface
+   Daylight face: warm paper, ink, vermilion pen.
+   Night face (voice deck): near-black instrument, amber phosphor.
+   ============================================================ */
+
 :root {
-  --bg-void: #08080c;
-  --accent: #7c5cff;
-  --accent-cyan: #4cc9f0;
-  --spring: cubic-bezier(0.22, 1.2, 0.36, 1);
+  --paper: #f2ede0;
+  --ink: #1c1a15;
+  --signal: #d9420b;
+  --amber: #ffb000;
+  --ease-out: cubic-bezier(0.19, 1, 0.22, 1);
 }
 
 html,
-body,
-#__next {
+body {
   margin: 0;
   padding: 0;
   width: 100%;
   height: 100%;
-  overflow: hidden;
-  background: var(--bg-void);
+  background: var(--paper);
+  color: var(--ink);
 }
 
 body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  overflow: hidden;
 }
 
-/* Visible keyboard focus rings everywhere */
+/* Visible keyboard focus — pen-red, everywhere */
 :focus-visible {
-  outline: 2px solid rgba(124, 92, 255, 0.85);
-  outline-offset: 2px;
-  border-radius: 6px;
+  outline: 2px solid var(--signal);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+.deck :focus-visible {
+  outline-color: var(--amber);
 }
 
-/* ---------- Ambient aurora backdrop (barely-there, monochrome-iridescent) ---------- */
-
-.aurora-blob {
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-  will-change: transform;
+::selection {
+  background: rgba(217, 66, 11, 0.22);
 }
 
-.aurora-1 {
-  width: 65vw; height: 65vw; min-width: 480px; min-height: 480px;
-  left: -18vw; top: -24vw;
-  background: radial-gradient(circle, rgba(124, 92, 255, 0.07) 0%, rgba(124, 92, 255, 0.025) 40%, transparent 65%);
-  animation: aurora-drift-1 46s ease-in-out infinite;
-}
-
-.aurora-2 {
-  width: 55vw; height: 55vw; min-width: 420px; min-height: 420px;
-  right: -14vw; bottom: -20vw;
-  background: radial-gradient(circle, rgba(76, 201, 240, 0.045) 0%, rgba(76, 201, 240, 0.015) 42%, transparent 64%);
-  animation: aurora-drift-2 62s ease-in-out infinite;
-}
-
-.aurora-3 {
-  width: 46vw; height: 46vw; min-width: 360px; min-height: 360px;
-  left: 26vw; top: 26%;
-  background: radial-gradient(circle, rgba(150, 92, 255, 0.035) 0%, transparent 66%);
-  animation: aurora-drift-3 78s ease-in-out infinite;
-}
-
-@keyframes aurora-drift-1 {
-  0%, 100% { transform: translate(-3%, -2%) rotate(0deg) scale(1); }
-  50%      { transform: translate(6%, 5%) rotate(10deg) scale(1.1); }
-}
-
-@keyframes aurora-drift-2 {
-  0%, 100% { transform: translate(2%, 3%) scale(1.05); }
-  50%      { transform: translate(-6%, -4%) scale(0.95); }
-}
-
-@keyframes aurora-drift-3 {
-  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.8; }
-  50%      { transform: translate(-5%, 7%) scale(1.15); opacity: 1; }
-}
-
-/* ---------- Spring choreography ---------- */
-
-/* Staggered entrance — pair with inline animation-delay */
-.stagger-in {
-  animation: stagger-in 0.6s var(--spring) both;
-}
-
-@keyframes stagger-in {
-  from { opacity: 0; transform: translateY(18px) scale(0.96); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-/* Orb hero entrance */
-.orb-in {
-  animation: orb-in 0.9s var(--spring) both;
-}
-
-@keyframes orb-in {
-  from { opacity: 0; transform: scale(0.6); }
-  to   { opacity: 1; transform: scale(1); }
-}
-
-/* Voice mode overlay entrance */
-.overlay-in {
-  animation: overlay-in 0.45s var(--spring) both;
-}
-
-@keyframes overlay-in {
-  from { opacity: 0; transform: scale(1.04); }
-  to   { opacity: 1; transform: scale(1); }
-}
-
-@keyframes msg-in {
-  from { opacity: 0; transform: translateY(14px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@keyframes status-in {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
-/* ---------- Micro-interactions ---------- */
-
-@keyframes wake-glow {
-  0%, 100% { opacity: 0.55; box-shadow: 0 0 6px rgba(124, 92, 255, 0.7); }
-  50%       { opacity: 1;    box-shadow: 0 0 12px rgba(124, 92, 255, 1); }
-}
-
-@keyframes thinking-dot {
-  0%, 60%, 100% { opacity: 0.25; transform: translateY(0); }
-  30%           { opacity: 1;    transform: translateY(-3px); }
-}
-
-@keyframes mic-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(124, 92, 255, 0.45), 0 0 30px rgba(124, 92, 255, 0.5); }
-  50%      { box-shadow: 0 0 0 12px rgba(124, 92, 255, 0), 0 0 44px rgba(124, 92, 255, 0.7); }
-}
-
-@keyframes mic-pulse-cyan {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(76, 201, 240, 0.35), 0 0 26px rgba(76, 201, 240, 0.4); }
-  50%      { box-shadow: 0 0 0 9px rgba(76, 201, 240, 0), 0 0 38px rgba(76, 201, 240, 0.55); }
-}
-
-.mic-listening { animation: mic-pulse 1.6s ease-in-out infinite; }
-.mic-processing { animation: mic-pulse-cyan 1.9s ease-in-out infinite; }
-
-/* Glass panel top-edge light */
-.glass-edge {
-  position: relative;
-}
-.glass-edge::before {
+/* Paper grain — one static SVG turbulence layer, zero runtime cost */
+.grain::before {
   content: '';
   position: absolute;
-  top: 0; left: 8%; right: 8%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+  inset: 0;
   pointer-events: none;
+  opacity: 0.5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.11 0 0 0 0 0.10 0 0 0 0 0.08 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
+  z-index: 1;
 }
 
-/* ---------- Reduced motion ---------- */
-
-@media (prefers-reduced-motion: reduce) {
-  .aurora-blob,
-  .mic-listening,
-  .mic-processing {
-    animation: none !important;
-  }
-  .stagger-in,
-  .orb-in,
-  .overlay-in {
-    animation-duration: 0.01s !important;
-  }
+/* Print-style double rule under the masthead */
+.double-rule {
+  border-top: 3px solid var(--ink);
+  position: relative;
+}
+.double-rule::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--ink);
 }
 
-/* Range inputs */
+/* Dotted log dividers */
+.log-rule {
+  background-image: linear-gradient(to right, rgba(28, 26, 21, 0.35) 20%, transparent 0);
+  background-size: 7px 1px;
+  background-repeat: repeat-x;
+  height: 1px;
+}
+
+/* Underlined prompt links with pen-stroke hover */
+.wire-link {
+  text-decoration: none;
+  border-bottom: 1px solid rgba(28, 26, 21, 0.45);
+  transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+}
+.wire-link:hover {
+  color: var(--signal);
+  border-bottom-color: var(--signal);
+  background: rgba(217, 66, 11, 0.07);
+}
+
+/* Range inputs — instrument sliders */
 input[type='range'] {
-  accent-color: var(--accent);
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 22px;
+  background: transparent;
+  cursor: pointer;
+}
+input[type='range']::-webkit-slider-runnable-track {
+  height: 2px;
+  background: rgba(28, 26, 21, 0.35);
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -8px;
+  width: 8px;
+  height: 18px;
+  border-radius: 2px;
+  background: var(--signal);
+  border: none;
+}
+input[type='range']::-moz-range-track {
+  height: 2px;
+  background: rgba(28, 26, 21, 0.35);
+}
+input[type='range']::-moz-range-thumb {
+  width: 8px;
+  height: 18px;
+  border-radius: 2px;
+  background: var(--signal);
+  border: none;
 }
 
-/* Scrollbars */
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 3px;
+/* Slim scrollbars that suit the paper */
+.log-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(28, 26, 21, 0.3) transparent;
 }
-::-webkit-scrollbar-thumb:hover { background: rgba(124, 92, 255, 0.4); }
+.log-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.log-scroll::-webkit-scrollbar-thumb {
+  background: rgba(28, 26, 21, 0.25);
+}
+.log-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Motion discipline */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

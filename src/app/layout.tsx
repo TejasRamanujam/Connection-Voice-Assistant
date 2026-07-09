@@ -1,41 +1,35 @@
 import type { Metadata, Viewport } from 'next'
-import { Space_Grotesk, Inter } from 'next/font/google'
+import { Fraunces, IBM_Plex_Mono } from 'next/font/google'
 import './globals.css'
 
-// -- NEXTAUTH (re-enable by uncommenting and wrapping children in SessionProvider) --
-// import { getServerSession } from 'next-auth'
-// import { authOptions } from '@/lib/auth'
-// import { SessionProvider } from '@/components/SessionProvider'
-
-const spaceGrotesk = Space_Grotesk({
+const fraunces = Fraunces({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  style: ['normal', 'italic'],
   variable: '--font-display',
 })
 
-const inter = Inter({
+const plexMono = IBM_Plex_Mono({
   subsets: ['latin'],
-  variable: '--font-body',
+  weight: ['400', '500', '600'],
+  variable: '--font-mono',
 })
 
 export const metadata: Metadata = {
-  title: 'Connection — AI Voice Assistant',
+  title: 'Connection — Signal on Paper',
   description:
-    'Conversational AI voice assistant powered by Gemini — wake-word activation, live speech recognition, and an audio-reactive orb.',
+    'A field-station voice assistant. Speak down the wire — Gemini answers with web search, todos, calendar and time, traced live on the chart recorder.',
 }
 
 export const viewport: Viewport = {
-  themeColor: '#07060d',
+  themeColor: '#F2EDE0',
+  width: 'device-width',
+  initialScale: 1,
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  // -- NEXTAUTH (re-enable) --
-  // const session = await getServerSession(authOptions)
-  // return <html><body><SessionProvider session={session}>{children}</SessionProvider></body></html>
-
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${inter.variable} h-full`}>
-      <body className="h-full m-0 overflow-hidden font-body bg-void text-ink">
+    <html lang="en" className={`${fraunces.variable} ${plexMono.variable} h-full`}>
+      <body className="h-full m-0 overflow-hidden font-mono bg-paper text-ink">
         {children}
       </body>
     </html>
