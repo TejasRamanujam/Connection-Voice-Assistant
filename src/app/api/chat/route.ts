@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import type OpenAI from 'openai'
 import { getClient, MAX_TOKENS, MODEL, SYSTEM_PROMPT } from '@/lib/anthropic'
 import { executeTool, openaiToolDefinitions } from '@/lib/tools'
-import { MAX_AGENT_STEPS, MAX_MESSAGE_CHARS, MAX_TOOL_CALLS_PER_STEP } from '@/lib/limits'
+import {
+  MAX_AGENT_STEPS,
+  MAX_MESSAGE_CHARS,
+  MAX_TOOL_CALLS_PER_STEP,
+  RATE_LIMITS,
+} from '@/lib/limits'
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
 // -- NEXTAUTH/PERSISTENCE (re-enable with NextAuth) --
 // import { getServerSession } from 'next-auth'
@@ -18,6 +24,20 @@ function receipt(result: string) {
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req.headers)
+    const quota = checkRateLimit(`chat:${ip}`, RATE_LIMITS.chat.limit, RATE_LIMITS.chat.windowMs)
+    if (!quota.allowed) {
+      return NextResponse.json(
+        { error: 'rate_limited' },
+        { status: 429, headers: { 'Retry-After': String(quota.retryAfter) } }
+      )
+    }
+
+    const contentLength = Number(req.headers.get('content-length') || 0)
+    if (contentLength > 16 * 1024) {
+      return NextResponse.json({ error: 'Request body is too large' }, { status: 413 })
+    }
+
     const body = await req.json()
     const message = typeof body?.message === 'string' ? body.message.trim() : ''
 
